@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import path from "path"; // <- Importa 'path'
 import { registerRoutes } from "./interfaces/routes";
 import { connectDB } from "./config/sqlServerClient";
 
@@ -11,6 +12,11 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// --- SERVIR ARCHIVOS ESTÁTICOS ---
+// Esto sirve todo lo que pongas en la carpeta 'public'
+app.use(express.static(path.join(__dirname, "..", "public")));
+
 
 // Rutas
 registerRoutes(app);
