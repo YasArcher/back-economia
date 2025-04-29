@@ -1,4 +1,5 @@
 export interface MenuItem {
+  orden: any;
   id: number;
   label: string;
   path: string;
