@@ -5,8 +5,7 @@ export interface Configuration {
     maxAmount: number;
     minTermMonths: number;
     maxTermMonths: number;
-    interestRateMin: number;
-    interestRateMax: number;
+    interestRate: number;
     createdAt: Date;
   }
   

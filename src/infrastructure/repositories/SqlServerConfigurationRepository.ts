@@ -23,8 +23,7 @@ export class SqlServerConfigurationRepository {
       maxAmount: raw.max_amount,
       minTermMonths: raw.min_term_months,
       maxTermMonths: raw.max_term_months,
-      interestRateMin: raw.interest_rate_min,
-      interestRateMax: raw.interest_rate_max,
+      interestRate: raw.interest_rate,
       createdAt: raw.created_at,
     };
   }

@@ -1,7 +1,7 @@
 import { IUserRepository } from '../repositories/IUserRepository';
 import { IUserRoleRepository } from '../repositories/IUserRoleRepository';
 import { ISessionRepository } from '../repositories/ISessionRepository';
-
+import { IinvestmentRepository} from '../repositories/IinvestmentRepository';
 import { IConfiguracionGlobalRepository } from '../repositories/appConfiguration/IConfiguracionGlobalRepository';
 import { IHomeBannerRepository } from '../repositories/appConfiguration/IHomeBannerRepository';
 import { IHomeServicioRepository } from '../repositories/appConfiguration/IHomeServicioRepository';
@@ -26,7 +26,8 @@ export interface IUnitOfWork {
   informeEconomicoRepository: IInformeEconomicoRepository;
   perspectivaMercadoRepository: IPerspectivaMercadoRepository;
   quienesSomosRepository: IHomeQuienesSomosRepository;
-
+  //metodos de inversiones 
+  investmentRepository: IinvestmentRepository;
   // Métodos de manejo de transacciones
   start(): Promise<void>;
   complete(): Promise<void>;

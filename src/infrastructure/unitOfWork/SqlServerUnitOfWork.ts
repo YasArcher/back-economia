@@ -2,6 +2,7 @@ import { IUnitOfWork } from '../../domain/unitOfWork/IUnitOfWork';
 import { SqlServerUserRepository } from '../repositories/SqlServerUserRepository';
 import { SqlServerUserRoleRepository } from '../repositories/SqlServerUserRoleRepository';
 import { SqlServerSessionRepository } from '../repositories/SqlServerSessionRepository';
+import { SqlServerInvestmentRepository } from '../repositories/SqlServerInvestmentRepository';
 
 import { SqlServerConfiguracionGlobalRepository } from '../repositories/appConfiguration/SqlServerConfiguracionGlobalRepository';
 import { SqlServerHomeBannerRepository } from '../repositories/appConfiguration/SqlServerHomeBannerRepository';
@@ -27,6 +28,8 @@ export class SqlServerUnitOfWork implements IUnitOfWork {
   public informeEconomicoRepository: SqlServerInformeEconomicoRepository;
   public perspectivaMercadoRepository: SqlServerPerspectivaMercadoRepository;
   public quienesSomosRepository: SqlServerHomeQuienesSomosRepository
+  public investmentRepository: SqlServerInvestmentRepository;
+
   private transaction: Transaction;
 
   constructor() {
@@ -44,6 +47,8 @@ export class SqlServerUnitOfWork implements IUnitOfWork {
     this.informeEconomicoRepository = new SqlServerInformeEconomicoRepository(this.transaction);
     this.perspectivaMercadoRepository = new SqlServerPerspectivaMercadoRepository(this.transaction);
     this.quienesSomosRepository = new SqlServerHomeQuienesSomosRepository(this.transaction);
+    this.investmentRepository = new SqlServerInvestmentRepository(this.transaction);
+
   }
 
   async start(): Promise<void> {
