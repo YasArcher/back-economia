@@ -1,10 +1,21 @@
-import { IUnitOfWork } from '../../../domain/unitOfWork/IUnitOfWork';
 import { Configuration } from '../../../domain/models/Configuration';
+import { CreateConfigurationDTO } from '../dto/InvestmentRequestDTO';
+import { IUnitOfWork } from '../../../domain/unitOfWork/IUnitOfWork';
 
 export class CreateInvestmentConfigurationService {
   constructor(private readonly unitOfWork: IUnitOfWork) {}
 
-  async execute(data: Configuration) {
-    return await this.unitOfWork.investmentRepository.create(data);
+  async execute(dto: CreateConfigurationDTO): Promise<Configuration> {
+    const nuevaConfiguracion: Configuration = {
+      id: 0, // o lo maneja la BD (auto-incremental)
+      minAmount: dto.min_amount,
+      maxAmount: dto.max_amount ?? 0, // Provide a default value for maxAmount
+      minTermMonths: dto.min_term_months,
+      maxTermMonths: dto.max_term_months ?? 0,
+      interestRate: dto.interest_rate,
+      createdAt: new Date(),
+    };
+
+    return await this.unitOfWork.investmentRepository.create(nuevaConfiguracion);
   }
 }

@@ -31,7 +31,7 @@ export class SqlServerInvestmentRepository implements IinvestmentRepository {
     const request = this.getRequest();
 
     const result = await request.query(`
-      INSERT INTO configurations (type, min_amount, max_amount, min_term_months, max_term_months, interest_rate, created_at)
+      INSERT INTO configurations ( min_amount, max_amount, min_term_months, max_term_months, interest_rate, created_at)
       OUTPUT INSERTED.*
       VALUES (
         ${config.minAmount},
@@ -48,17 +48,25 @@ export class SqlServerInvestmentRepository implements IinvestmentRepository {
 
   async update(config: Configuration): Promise<void> {
     const request = this.getRequest();
-
+  
+    request.input('id', config.id);
+    request.input('min_amount', config.minAmount);
+    request.input('max_amount', config.maxAmount ?? null);
+    request.input('min_term_months', config.minTermMonths);
+    request.input('max_term_months', config.maxTermMonths ?? null);
+    request.input('interest_rate', config.interestRate);
+  
     await request.query(`
       UPDATE configurations SET
-        min_amount = ${config.minAmount},
-        max_amount = ${config.maxAmount ?? 'NULL'},
-        min_term_months = ${config.minTermMonths},
-        max_term_months = ${config.maxTermMonths ?? 'NULL'},
-        interest_rate = ${config.interestRate}
-      WHERE id = ${config.id}
+        min_amount = @min_amount,
+        max_amount = @max_amount,
+        min_term_months = @min_term_months,
+        max_term_months = @max_term_months,
+        interest_rate = @interest_rate
+      WHERE id = @id
     `);
   }
+  
 
   async delete(id: number): Promise<void> {
     const request = this.getRequest();
