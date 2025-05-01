@@ -9,9 +9,9 @@ export class CreateInvestmentConfigurationService {
     const nuevaConfiguracion: Configuration = {
       id: 0, // o lo maneja la BD (auto-incremental)
       minAmount: dto.min_amount,
-      maxAmount: dto.max_amount ?? 0, // Provide a default value for maxAmount
+      maxAmount: dto.max_amount ,// Provide a default value for maxAmount
       minTermMonths: dto.min_term_months,
-      maxTermMonths: dto.max_term_months ?? 0,
+      maxTermMonths: dto.max_term_months ,
       interestRate: dto.interest_rate,
       createdAt: new Date(),
     };
