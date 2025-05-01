@@ -18,7 +18,6 @@ export class SqlServerConfigurationRepository {
     const raw = result.recordset[0];
     return {
       id: raw.id,
-      type: raw.type,
       minAmount: raw.min_amount,
       maxAmount: raw.max_amount,
       minTermMonths: raw.min_term_months,

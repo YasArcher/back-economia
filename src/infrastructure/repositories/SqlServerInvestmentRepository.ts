@@ -34,7 +34,6 @@ export class SqlServerInvestmentRepository implements IinvestmentRepository {
       INSERT INTO configurations (type, min_amount, max_amount, min_term_months, max_term_months, interest_rate, created_at)
       OUTPUT INSERTED.*
       VALUES (
-        '${config.type}',
         ${config.minAmount},
         ${config.maxAmount ?? 'NULL'},
         ${config.minTermMonths},
@@ -52,7 +51,6 @@ export class SqlServerInvestmentRepository implements IinvestmentRepository {
 
     await request.query(`
       UPDATE configurations SET
-        type = '${config.type}',
         min_amount = ${config.minAmount},
         max_amount = ${config.maxAmount ?? 'NULL'},
         min_term_months = ${config.minTermMonths},
