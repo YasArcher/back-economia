@@ -25,8 +25,13 @@ export const loginUserController = async (req: Request, res: Response): Promise<
   const userAgent = req.headers['user-agent'] || 'Unknown';
 
   try {
-    const token = await loginUserService.execute(req.body, ipAddress, userAgent);
-    res.status(200).json({ message: 'Login successful', token });
+    const result = await loginUserService.execute(req.body, ipAddress, userAgent);
+
+    res.status(200).json({
+      message: 'Login successful',
+      token: result.token,
+      role: result.role
+    });
   } catch (error: any) {
     res.status(401).json({ message: error.message });
   }

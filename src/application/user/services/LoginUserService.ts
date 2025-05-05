@@ -6,7 +6,11 @@ import jwt from 'jsonwebtoken';
 export class LoginUserService {
   constructor(private readonly unitOfWork: IUnitOfWork) {}
 
-  async execute(dto: LoginUserDTO, ipAddress: string, userAgent: string): Promise<string> {
+  async execute(
+    dto: LoginUserDTO,
+    ipAddress: string,
+    userAgent: string
+  ): Promise<{ token: string; role: string }> {
     const { email, password } = dto;
 
     await this.unitOfWork.start();
@@ -21,7 +25,7 @@ export class LoginUserService {
       }
 
       const token = jwt.sign(
-        { userId: user.id },
+        { userId: user.id, role: user.role }, // puedes incluir el rol en el token también
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '48h' }
       );
@@ -39,7 +43,10 @@ export class LoginUserService {
       await this.unitOfWork.sessionRepository.create(sessionDto);
 
       await this.unitOfWork.complete();
-      return token;
+      return {
+        token,
+        role: user.role
+      };
     } catch (error) {
       await this.unitOfWork.rollback();
       throw error;
