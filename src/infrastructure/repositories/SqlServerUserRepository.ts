@@ -21,10 +21,17 @@ export class SqlServerUserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<User | null> {
     const request = this.transaction.request();
     const result = await request.query(`
-      SELECT u.id, u.name, u.email, u.password_hash, r.role
-      FROM users u
-      LEFT JOIN user_roles r ON r.user_id = u.id
-      WHERE email = '${email}'
+SELECT 
+  u.id, 
+  u.name, 
+  u.email, 
+  u.password_hash, 
+  rl.name AS role
+FROM users u
+LEFT JOIN user_roles ur ON ur.user_id = u.id
+LEFT JOIN roles rl ON ur.role_id = rl.id
+WHERE u.email = '${email}'
+
     `);
 
     if (result.recordset.length === 0) {

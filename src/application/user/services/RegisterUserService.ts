@@ -12,6 +12,8 @@ export class RegisterUserService {
         name: dto.name,
         email: dto.email,
         password_hash: dto.password,
+        role: '',
+        role_id: dto.roleId
       };
 
       const user = await this.unitOfWork.userRepository.create(userToSave);
