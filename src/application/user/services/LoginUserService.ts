@@ -25,7 +25,7 @@ export class LoginUserService {
       }
 
       const token = jwt.sign(
-        { userId: user.id, role: user.role }, // puedes incluir el rol en el token también
+        { userId: user.id, role: user.role },
         process.env.JWT_SECRET || 'secret',
         { expiresIn: '48h' }
       );
@@ -41,7 +41,6 @@ export class LoginUserService {
       };
 
       await this.unitOfWork.sessionRepository.create(sessionDto);
-
       await this.unitOfWork.complete();
       return {
         token,
