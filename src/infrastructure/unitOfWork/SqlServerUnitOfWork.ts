@@ -17,28 +17,30 @@ import { Transaction } from 'mssql';
 import { SqlServerHomeQuienesSomosRepository } from '../repositories/appConfiguration/SqlServerHomeQuienesSomosRepository';
 
 export class SqlServerUnitOfWork implements IUnitOfWork {
-  public userRepository: SqlServerUserRepository;
-  public userRoleRepository: SqlServerUserRoleRepository;
-  public sessionRepository: SqlServerSessionRepository;
-  public configuracionGlobalRepository: SqlServerConfiguracionGlobalRepository;
-  public homeBannerRepository: SqlServerHomeBannerRepository;
-  public homeServicioRepository: SqlServerHomeServicioRepository;
-  public homeTestimonioRepository: SqlServerHomeTestimonioRepository;
-  public homeContactoRepository: SqlServerHomeContactoRepository;
-  public informeEconomicoRepository: SqlServerInformeEconomicoRepository;
-  public perspectivaMercadoRepository: SqlServerPerspectivaMercadoRepository;
-  public quienesSomosRepository: SqlServerHomeQuienesSomosRepository
-  public investmentRepository: SqlServerInvestmentRepository;
+  private transaction: Transaction | null = null;
 
-  private transaction: Transaction;
+  public userRepository!: SqlServerUserRepository;
+  public userRoleRepository!: SqlServerUserRoleRepository;
+  public sessionRepository!: SqlServerSessionRepository;
+  public configuracionGlobalRepository!: SqlServerConfiguracionGlobalRepository;
+  public homeBannerRepository!: SqlServerHomeBannerRepository;
+  public homeServicioRepository!: SqlServerHomeServicioRepository;
+  public homeTestimonioRepository!: SqlServerHomeTestimonioRepository;
+  public homeContactoRepository!: SqlServerHomeContactoRepository;
+  public informeEconomicoRepository!: SqlServerInformeEconomicoRepository;
+  public perspectivaMercadoRepository!: SqlServerPerspectivaMercadoRepository;
+  public quienesSomosRepository!: SqlServerHomeQuienesSomosRepository;
+  public investmentRepository!: SqlServerInvestmentRepository;
 
-  constructor() {
+  async start(): Promise<void> {
+    if (this.transaction) return; // Evita reabrir transacción existente
+
     this.transaction = new Transaction(pool);
+    await this.transaction.begin();
 
     this.userRepository = new SqlServerUserRepository(this.transaction);
     this.userRoleRepository = new SqlServerUserRoleRepository(this.transaction);
     this.sessionRepository = new SqlServerSessionRepository(this.transaction);
-
     this.configuracionGlobalRepository = new SqlServerConfiguracionGlobalRepository(this.transaction);
     this.homeBannerRepository = new SqlServerHomeBannerRepository(this.transaction);
     this.homeServicioRepository = new SqlServerHomeServicioRepository(this.transaction);
@@ -48,18 +50,19 @@ export class SqlServerUnitOfWork implements IUnitOfWork {
     this.perspectivaMercadoRepository = new SqlServerPerspectivaMercadoRepository(this.transaction);
     this.quienesSomosRepository = new SqlServerHomeQuienesSomosRepository(this.transaction);
     this.investmentRepository = new SqlServerInvestmentRepository(this.transaction);
-
-  }
-
-  async start(): Promise<void> {
-    await this.transaction.begin();
   }
 
   async complete(): Promise<void> {
-    await this.transaction.commit();
+    if (this.transaction) {
+      await this.transaction.commit();
+      this.transaction = null;
+    }
   }
 
   async rollback(): Promise<void> {
-    await this.transaction.rollback();
+    if (this.transaction) {
+      await this.transaction.rollback();
+      this.transaction = null;
+    }
   }
 }
