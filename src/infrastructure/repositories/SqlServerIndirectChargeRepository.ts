@@ -59,8 +59,8 @@ export class SqlServerIndirectChargeRepository {
   async findAll(): Promise<IndirectCharge[]> {
     const request = pool.request();
     const result = await request.query(`SELECT * FROM indirect_charges`);
-  
-    return result.recordset.map(raw => ({
+
+    return result.recordset.map((raw) => ({
       id: raw.id,
       creditTypeId: raw.credit_type_id,
       name: raw.name,
@@ -69,5 +69,11 @@ export class SqlServerIndirectChargeRepository {
       createdAt: raw.created_at,
     }));
   }
-  
+
+  async deleteById(id: number): Promise<void> {
+    const request = pool.request();
+    await request.input("id", id).query(`
+      DELETE FROM indirect_charges WHERE id = @id
+    `);
+  }
 }

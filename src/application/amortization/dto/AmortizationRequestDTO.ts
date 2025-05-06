@@ -1,6 +1,6 @@
 export interface AmortizationRequestDTO {
-  creditTypeId: number;
   amount: number;
   termMonths: number;
+  creditType: number;
   systemType: 'french' | 'german';
 }

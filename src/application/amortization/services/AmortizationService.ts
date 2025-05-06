@@ -1,83 +1,155 @@
-import { AmortizationRequestDTO } from '../dto/AmortizationRequestDTO';
-import { AmortizationScheduleEntry } from '../../../domain/models/AmortizationScheduleEntry';
-import { SqlServerCreditTypeRepository } from '../../../infrastructure/repositories/SqlServerCreditTypeRepository';
-import { SqlServerIndirectChargeRepository } from '../../../infrastructure/repositories/SqlServerIndirectChargeRepository';
-import { ValidationService } from '../../../shared/services/ValidationService';
+import { AmortizationRequestDTO } from "../dto/AmortizationRequestDTO";
+import { SqlServerCreditTypeRepository } from "../../../infrastructure/repositories/SqlServerCreditTypeRepository";
+import { SqlServerIndirectChargeRepository } from "../../../infrastructure/repositories/SqlServerIndirectChargeRepository";
 
 export class AmortizationService {
   private creditTypeRepo = new SqlServerCreditTypeRepository();
   private indirectChargeRepo = new SqlServerIndirectChargeRepository();
 
-  async execute(dto: AmortizationRequestDTO): Promise<AmortizationScheduleEntry[]> {
-    const { creditTypeId, amount, termMonths, systemType } = dto;
+  async execute(dto: AmortizationRequestDTO): Promise<any[]> {
+    const { creditType, amount, termMonths, systemType } = dto;
 
-    const creditType = await this.creditTypeRepo.findById(creditTypeId);
-    if (!creditType) {
-      throw new Error('Credit type not found');
+    const creditTypeEntity = await this.creditTypeRepo.findById(creditType);
+    if (!creditTypeEntity) throw new Error("Tipo de crédito no encontrado");
+
+    const term = termMonths;
+    if (!term || isNaN(term) || term <= 0)
+      throw new Error("Debe proporcionar un plazo válido en meses.");
+
+    if (
+      amount < creditTypeEntity.minAmount ||
+      amount > creditTypeEntity.maxAmount
+    ) {
+      throw new Error(
+        `El monto debe estar entre ${creditTypeEntity.minAmount} y ${creditTypeEntity.maxAmount}`
+      );
     }
 
-    const indirectCharges = await this.indirectChargeRepo.findByCreditTypeId(creditTypeId);
+    if (
+      term < creditTypeEntity.minTermMonths ||
+      term > creditTypeEntity.maxTermMonths
+    ) {
+      throw new Error(
+        `El plazo debe estar entre ${creditTypeEntity.minTermMonths} y ${creditTypeEntity.maxTermMonths} meses`
+      );
+    }
 
-    // VALIDACIONES
-    await ValidationService.validateConfiguration('credit', amount, termMonths, creditType.interestRate);
+    const indirectCharges = await this.indirectChargeRepo.findByCreditTypeId(
+      creditType
+    );
+    const monthlyInterestRate = creditTypeEntity.interestRate / 12 / 100;
+    const schedule: any[] = [];
 
-    const monthlyInterestRate = creditType.interestRate / 12 / 100;
-    const schedule: AmortizationScheduleEntry[] = [];
+    const additionalMonthlyCharge = this.calculateMonthlyIndirectCharges(
+      indirectCharges,
+      amount,
+      term
+    );
+    let remainingBalance = parseFloat(amount.toFixed(2));
 
-    let remainingBalance = amount;
-    let totalIndirectChargesMonthly = this.calculateMonthlyIndirectCharges(indirectCharges, amount);
+    schedule.push({
+      N: "-",
+      "Cuota Simple": "-",
+      "Cuota Compuesta": "-",
+      Interes: "-",
+      Capital: "-",
+      Saldo: `$${remainingBalance.toFixed(2)}`,
+    });
 
-    if (systemType === 'french') {
-      const installment = amount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, termMonths)) / (Math.pow(1 + monthlyInterestRate, termMonths) - 1);
+    if (systemType === "german") {
+      const capitalPayment = parseFloat((amount / term).toFixed(2));
 
-      for (let month = 1; month <= termMonths; month++) {
-        const interest = remainingBalance * monthlyInterestRate;
-        const principal = installment - interest;
-        remainingBalance -= principal;
+      for (let month = 1; month <= term; month++) {
+        const interest = parseFloat(
+          (remainingBalance * monthlyInterestRate).toFixed(2)
+        );
+        let capital = capitalPayment;
+        let installment = parseFloat((capital + interest).toFixed(2));
+        let newBalance = parseFloat((remainingBalance - capital).toFixed(2));
+
+        if (month === term) {
+          capital = remainingBalance;
+          installment = parseFloat((capital + interest).toFixed(2));
+          newBalance = 0;
+        }
 
         schedule.push({
-          month,
-          installment: Number((installment + totalIndirectChargesMonthly).toFixed(2)),
-          principal: Number(principal.toFixed(2)),
-          interest: Number(interest.toFixed(2)),
-          balance: Number(Math.max(remainingBalance, 0).toFixed(2)),
+          N: month,
+          "Cuota Simple": `$${installment.toFixed(2)}`,
+          "Cuota Compuesta": `$${(
+            installment + additionalMonthlyCharge
+          ).toFixed(2)}`,
+          Interes: `$${interest.toFixed(2)}`,
+          Capital: `$${capital.toFixed(2)}`,
+          Saldo: `$${newBalance.toFixed(2)}`,
         });
+
+        remainingBalance = newBalance;
       }
-    } else if (systemType === 'german') {
-      const principalPayment = amount / termMonths;
+    } else if (systemType === "french") {
+      const cuota =
+        (amount *
+          (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, term))) /
+        (Math.pow(1 + monthlyInterestRate, term) - 1);
+      const cuotaFixed = parseFloat(cuota.toFixed(2));
 
-      for (let month = 1; month <= termMonths; month++) {
-        const interest = remainingBalance * monthlyInterestRate;
-        const installment = principalPayment + interest;
+      for (let month = 1; month <= term; month++) {
+        const interest = parseFloat(
+          (remainingBalance * monthlyInterestRate).toFixed(2)
+        );
+        let capital = parseFloat((cuotaFixed - interest).toFixed(2));
+        let newBalance = parseFloat((remainingBalance - capital).toFixed(2));
 
-        remainingBalance -= principalPayment;
-
-        schedule.push({
-          month,
-          installment: Number((installment + totalIndirectChargesMonthly).toFixed(2)),
-          principal: Number(principalPayment.toFixed(2)),
-          interest: Number(interest.toFixed(2)),
-          balance: Number(Math.max(remainingBalance, 0).toFixed(2)),
-        });
+        if (month === term) {
+          capital = remainingBalance;
+          const finalInterest = parseFloat((cuotaFixed - capital).toFixed(2));
+          schedule.push({
+            N: month,
+            "Cuota Simple": `$${cuotaFixed.toFixed(2)}`,
+            "Cuota Compuesta": `$${(
+              cuotaFixed + additionalMonthlyCharge
+            ).toFixed(2)}`,
+            Interes: `$${finalInterest.toFixed(2)}`,
+            Capital: `$${capital.toFixed(2)}`,
+            Saldo: `$0.00`,
+          });
+        } else {
+          schedule.push({
+            N: month,
+            "Cuota Simple": `$${cuotaFixed.toFixed(2)}`,
+            "Cuota Compuesta": `$${(
+              cuotaFixed + additionalMonthlyCharge
+            ).toFixed(2)}`,
+            Interes: `$${interest.toFixed(2)}`,
+            Capital: `$${capital.toFixed(2)}`,
+            Saldo: `$${newBalance.toFixed(2)}`,
+          });
+          remainingBalance = newBalance;
+        }
       }
     } else {
-      throw new Error('Invalid system type');
+      throw new Error("Invalid system type");
     }
 
     return schedule;
   }
 
-  private calculateMonthlyIndirectCharges(indirectCharges: any[], amount: number): number {
-    let total = 0;
+  private calculateMonthlyIndirectCharges(
+    indirectCharges: any[],
+    amount: number,
+    totalInstallments: number
+  ): number {
+    let totalMonthly = 0;
 
     for (const charge of indirectCharges) {
-      if (charge.chargeType === 'percentage') {
-        total += (amount * charge.value) / 100;
-      } else if (charge.chargeType === 'fixed') {
-        total += charge.value;
+      if (charge.chargeType === "percentage") {
+        const totalPercent = (amount * charge.value) / 100;
+        totalMonthly += totalPercent / totalInstallments;
+      } else if (charge.chargeType === "fixed") {
+        totalMonthly += charge.value / totalInstallments;
       }
     }
 
-    return total;
+    return parseFloat(totalMonthly.toFixed(2));
   }
 }
