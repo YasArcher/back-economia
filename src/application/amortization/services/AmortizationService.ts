@@ -134,22 +134,24 @@ export class AmortizationService {
     return schedule;
   }
 
-  private calculateMonthlyIndirectCharges(
-    indirectCharges: any[],
-    amount: number,
-    totalInstallments: number
-  ): number {
+  private calculateMonthlyIndirectCharges(indirectCharges: any[], amount: number, totalInstallments: number): number {
     let totalMonthly = 0;
-
+  
     for (const charge of indirectCharges) {
-      if (charge.chargeType === "percentage") {
+      const applies =
+        (charge.minAmount === null || amount >= charge.minAmount) &&
+        (charge.maxAmount === null || amount <= charge.maxAmount);
+  
+      if (!applies) continue;
+  
+      if (charge.chargeType === 'percentage') {
         const totalPercent = (amount * charge.value) / 100;
         totalMonthly += totalPercent / totalInstallments;
-      } else if (charge.chargeType === "fixed") {
+      } else if (charge.chargeType === 'fixed') {
         totalMonthly += charge.value / totalInstallments;
       }
     }
-
-    return parseFloat(totalMonthly.toFixed(2));
+  
+    return totalMonthly;
   }
 }
