@@ -134,24 +134,40 @@ export class AmortizationService {
     return schedule;
   }
 
-  private calculateMonthlyIndirectCharges(indirectCharges: any[], amount: number, totalInstallments: number): number {
-    let totalMonthly = 0;
-  
+  private calculateMonthlyIndirectCharges(
+    indirectCharges: any[],
+    amount: number,
+    totalInstallments: number
+  ): number {
+    let total = 0;
+
     for (const charge of indirectCharges) {
-      const applies =
-        (charge.minAmount === null || amount >= charge.minAmount) &&
-        (charge.maxAmount === null || amount <= charge.maxAmount);
-  
-      if (!applies) continue;
-  
-      if (charge.chargeType === 'percentage') {
-        const totalPercent = (amount * charge.value) / 100;
-        totalMonthly += totalPercent / totalInstallments;
-      } else if (charge.chargeType === 'fixed') {
-        totalMonthly += charge.value / totalInstallments;
+      if (
+        charge.chargeType === "percentage" &&
+        Array.isArray(charge.amountRanges)
+      ) {
+        // Ordenar rangos y tomar el primero que calce o el último si ninguno calza
+        const sorted = charge.amountRanges.sort(
+          (a: any, b: any) => a.max - b.max
+        );
+        const matchedRange =
+          sorted.find((range: any) => amount <= range.max) ||
+          sorted[sorted.length - 1];
+        total += (amount * matchedRange.value) / 100 / totalInstallments;
+      } else if (
+        charge.chargeType === "fixed" &&
+        Array.isArray(charge.amountRanges)
+      ) {
+        const sorted = charge.amountRanges.sort(
+          (a: any, b: any) => a.max - b.max
+        );
+        const matchedRange =
+          sorted.find((range: any) => amount <= range.max) ||
+          sorted[sorted.length - 1];
+        total += matchedRange.value / totalInstallments;
       }
     }
-  
-    return totalMonthly;
+
+    return parseFloat(total.toFixed(2));
   }
 }
