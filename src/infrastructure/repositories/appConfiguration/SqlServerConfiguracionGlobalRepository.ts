@@ -51,7 +51,6 @@ export class SqlServerConfiguracionGlobalRepository {
       UPDATE ConfiguracionesGlobales
       SET
         nombre_empresa = '${config.nombreEmpresa}',
-        logo_url = '${config.logoUrl}',
         texto_principal = '${config.textoPrincipal ?? ''}',
         texto_secundario = '${config.textoSecundario ?? ''}',
         texto_terciario = '${config.textoTerciario ?? ''}',
